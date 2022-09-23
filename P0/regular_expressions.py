@@ -28,7 +28,7 @@ caso_decimal_neg = "(" + "(" + caso_enteros + "|)" + "\.[0-9]+" + "|" + "(" + ca
 RE2 = caso_enteros + "|" + caso_decimal_pos + "|" + caso_decimal_neg
 
 prefijo = "(www\.uam\.es|moodle\.uam\.es)/"
-extension = "(([A-Za-z]+(/|))*|)"
+extension = "(([A-Za-z]+(/|))*)"
 RE3 = prefijo +  extension
 
 num = "([1-9][1-9]*)"
