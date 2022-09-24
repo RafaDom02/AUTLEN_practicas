@@ -37,7 +37,7 @@ RE4 = "("+ num + operando + ")*" + num #cuenta como un solo numero una expresion
 
 # 7*(3+12-36)
 # a * b
-expr_aritm = "("+ num + operando + ")+" + num
+expr_aritm = "("+ num + operando + ")*" + num
 numero_suelto = num
 numero_parentesis = "\(" + expr_aritm + "\)"
 RE5 = "(" + numero_suelto + operando + "|" + numero_parentesis + operando + ")*" + "(" + numero_suelto + "|" + numero_parentesis +")"
