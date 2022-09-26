@@ -1,5 +1,6 @@
 """Evaluation of automata."""
 from collections import defaultdict, deque
+from pstats import StatsProfile
 from typing import Set
 
 from automata.automaton import FiniteAutomaton, State
@@ -38,8 +39,15 @@ class FiniteAutomatonEvaluator():
         """
         #---------------------------------------------------------------------
         # TO DO: Implement this method...
-        
-        raise NotImplementedError("This method must be implemented.")        
+        expanded_states: Set[State] = set()
+
+        for state in self.current_states:
+            for transition in state.transitions:
+                if transition.symbol == symbol:
+                    expanded_states.add(self.automaton.name2state[transition.state])
+
+        self._complete_lambdas(expanded_states)
+        self.current_states = expanded_states
         #---------------------------------------------------------------------
 
         
@@ -52,8 +60,24 @@ class FiniteAutomatonEvaluator():
         """
         #---------------------------------------------------------------------
         # TO DO: Implement this method...
+        visited_states = list()
+        tovisit_states = list(set_to_complete)
         
-        raise NotImplementedError("This method must be implemented.")        
+        while True:
+            if(len(tovisit_states) == 0):
+                visited_states = set(visited_states)
+                set_to_complete.union(visited_states)
+                return
+            
+            current_state = tovisit_states.pop()
+
+            if (visited_states.count(current_state) == 0):
+                for transition in current_state.transitions:
+                    if transition.symbol == "None":
+                        tovisit_states.append(self.automaton.name2state[transition.state])
+            
+            visited_states.append(current_state)
+        
         #---------------------------------------------------------------------
 
         
@@ -73,8 +97,11 @@ class FiniteAutomatonEvaluator():
         """Check if the current state is an accepting one."""
         #---------------------------------------------------------------------
         # TO DO: Implement this method...
+        for state in self.current_states:
+            if state.is_final == True:
+                return True
         
-        raise NotImplementedError("This method must be implemented.")        
+        return False
         #---------------------------------------------------------------------
         
 
