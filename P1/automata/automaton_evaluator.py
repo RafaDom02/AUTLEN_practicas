@@ -45,9 +45,9 @@ class FiniteAutomatonEvaluator():
             for transition in state.transitions:
                 if transition.symbol == symbol:
                     expanded_states.add(self.automaton.name2state[transition.state])
-
-        self._complete_lambdas(expanded_states)
+        
         self.current_states = expanded_states
+        self._complete_lambdas(self.current_states)
         #---------------------------------------------------------------------
 
         
@@ -61,23 +61,22 @@ class FiniteAutomatonEvaluator():
         #---------------------------------------------------------------------
         # TO DO: Implement this method...
         visited_states = list()
-        tovisit_states = list(set_to_complete)
+        to_visit_states = list(set_to_complete)
         
         while True:
-            if(len(tovisit_states) == 0):
-                visited_states = set(visited_states)
-                set_to_complete.union(visited_states)
+            if(len(to_visit_states) == 0):
                 return
             
-            current_state = tovisit_states.pop()
+            current_state = to_visit_states.pop()
 
             if (visited_states.count(current_state) == 0):
                 for transition in current_state.transitions:
-                    if transition.symbol == "None":
-                        tovisit_states.append(self.automaton.name2state[transition.state])
+                    if transition.symbol == None:
+                        state = self.automaton.name2state[transition.state]
+                        to_visit_states.append(state)
+                        set_to_complete.add(state)
             
-            visited_states.append(current_state)
-        
+                visited_states.append(current_state)        
         #---------------------------------------------------------------------
 
         

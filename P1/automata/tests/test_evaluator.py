@@ -140,7 +140,7 @@ class TestEvaluatorNumber(TestEvaluatorBase):
     def test_number(self) -> None:
         """ Test for a fixed string. """
         self._check_accept("0", should_accept=True)
-        """self._check_accept("0.0", should_accept=True)
+        self._check_accept("0.0", should_accept=True)
         self._check_accept("0.1", should_accept=True)
         self._check_accept("1.0", should_accept=True)
         self._check_accept("-0", should_accept=True)
@@ -151,7 +151,7 @@ class TestEvaluatorNumber(TestEvaluatorBase):
         self._check_accept("0.", should_accept=False)
         self._check_accept(".0", should_accept=False)
         self._check_accept("0.0.0", should_accept=False)
-        self._check_accept("0-0.0", should_accept=False)"""
+        self._check_accept("0-0.0", should_accept=False)
 
 
 if __name__ == '__main__':

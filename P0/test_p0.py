@@ -86,6 +86,7 @@ class TestP0(unittest.TestCase):
         self.check_expression(RE5, "", False)
         self.check_expression(RE5, "7*(3+12-36)", True)
         self.check_expression(RE5, "7*(3+12-(2-5)/36)", False)
+        self.check_expression(RE5, "7*(3+12-36)+(5+6)/7", True)
 
 
 if __name__ == '__main__':
