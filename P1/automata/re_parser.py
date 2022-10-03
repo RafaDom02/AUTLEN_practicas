@@ -63,8 +63,12 @@ class REParser():
         """
         #---------------------------------------------------------------------
         # TO DO: Implement this method...
+        state_ini = State('state' + str(self.state_counter), False)
+        self.state_counter += 1
+        state_final = State('state'+ str(self.state_counter),True)
+        self.state_counter += 1
         
-        raise NotImplementedError("This method must be implemented.")        
+        return FiniteAutomaton([state_ini, state_final])
         #---------------------------------------------------------------------
         
 
@@ -80,8 +84,15 @@ class REParser():
         """
         #---------------------------------------------------------------------
         # TO DO: Implement this method...
+        state_ini = State('state' + str(self.state_counter), False)
+        self.state_counter += 1
+        state_final = State('state'+ str(self.state_counter),True)
+        self.state_counter += 1
         
-        raise NotImplementedError("This method must be implemented.")        
+        transition_ini_fin = Transition(None, state_final.name)
+        state_ini.add_transitions([transition_ini_fin])
+
+        return FiniteAutomaton([state_ini, state_final])
         #---------------------------------------------------------------------
 
 
@@ -102,7 +113,15 @@ class REParser():
         #---------------------------------------------------------------------
         # TO DO: Implement this method...
         
-        raise NotImplementedError("This method must be implemented.")        
+        state_ini = State('state' + str(self.state_counter), False)
+        self.state_counter += 1
+        state_final = State('state'+ str(self.state_counter),True)
+        self.state_counter += 1
+        
+        transition_ini_fin = Transition(symbol, state_final.name)
+        state_ini.add_transitions([transition_ini_fin])
+
+        return FiniteAutomaton([state_ini, state_final])      
         #---------------------------------------------------------------------
 
 
@@ -122,8 +141,31 @@ class REParser():
         """
         #---------------------------------------------------------------------
         # TO DO: Implement this method...
+        state_ini = State('state' + str(self.state_counter), False)
+        self.state_counter += 1
+        state_final = State('state'+ str(self.state_counter),True)
+        self.state_counter += 1
+        states = [state_ini, state_final]
+
+        #--------- INIT - FINAL | INIT - AUTOMATON ---------#
+        t1 = Transition(None,state_final.name)
+        t2 = Transition(None,automaton.states[0].name)
         
-        raise NotImplementedError("This method must be implemented.")        
+        state_ini.add_transitions([t1,t2])
+
+        #--------- FINAL - INIT | AUTOMATON - FINAL ---------#
+        old_final = automaton.states[1]
+        old_final.is_final = False
+        
+        t1 = Transition(None,state_ini.name)
+        t2 = Transition(None,state_final.name)
+        
+        state_final.add_transitions([t1])
+        old_final.add_transitions([t2])
+        
+        states.extend(automaton.states)
+
+        return FiniteAutomaton(states)    
         #---------------------------------------------------------------------
 
 
@@ -145,8 +187,33 @@ class REParser():
         """
         #---------------------------------------------------------------------
         # TO DO: Implement this method...
+        state_ini = State('state' + str(self.state_counter), False)
+        self.state_counter += 1
+        state_final = State('state'+ str(self.state_counter),True)
+        self.state_counter += 1
+        states = [state_ini, state_final]
+
+        #--------- INIT - AUTO1 | INIT - AUTO2 ---------#
+        t1 = Transition(None, automaton1.states[0].name)
+        t2 = Transition(None,automaton2.states[0].name)
         
-        raise NotImplementedError("This method must be implemented.")        
+        state_ini.add_transitions([t1,t2])
+
+        #--------- AUTO1 - FINAL | AUTO2 - FINAL ---------#
+        old_final1 = automaton1.states[1]
+        old_final1.is_final = False
+        old_final2 = automaton2.states[1]
+        old_final2.is_final = False
+        
+        t1 = Transition(None,state_final.name)
+        
+        old_final1.add_transitions([t1])
+        old_final2.add_transitions([t1])
+        
+        states.extend(automaton1.states)
+        states.extend(automaton2.states)
+
+        return FiniteAutomaton(states) 
         #---------------------------------------------------------------------
 
 
@@ -168,8 +235,36 @@ class REParser():
         """
         #---------------------------------------------------------------------
         # TO DO: Implement this method...
+        state_ini = State('state' + str(self.state_counter), False)
+        self.state_counter += 1
+        state_final = State('state'+ str(self.state_counter),True)
+        self.state_counter += 1
+        states = [state_ini, state_final]
+
+        #--------- INIT - AUTO1 ---------#
+        t1 = Transition(None, automaton1.states[0].name)
         
-        raise NotImplementedError("This method must be implemented.")        
+        state_ini.add_transitions([t1])
+
+        #--------- AUTO1 - AUTO2 ---------#
+        old_final1 = automaton1.states[1]
+        old_final1.is_final = False
+        old_init2 = automaton2.states[0]
+        
+        t1 = Transition(None,old_init2.name)
+        old_final1.add_transitions([t1])
+        
+        #--------- AUTO2 - FINAL ---------#
+        old_final2 = automaton1.states[1]
+        old_final2.is_final = False
+
+        t1 = Transition(None,state_final.name)
+        old_final2.add_transitions([t1])
+                
+        states.extend(automaton1.states)
+        states.extend(automaton2.states)
+
+        return FiniteAutomaton(states)    
         #---------------------------------------------------------------------
 
 
