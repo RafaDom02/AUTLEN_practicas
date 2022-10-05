@@ -1,7 +1,8 @@
 """Conversion from regex to automata."""
-from typing import List
+from typing import List, Tuple
 
 from automata.automaton import FiniteAutomaton, State, Transition
+
 
 def _re_to_rpn(re_string: str) -> str:
     """
@@ -42,7 +43,6 @@ def _re_to_rpn(re_string: str) -> str:
     return rpn_string
 
 
-
 class REParser():
     """Class for processing regular expressions in Kleene's syntax."""
 
@@ -50,6 +50,13 @@ class REParser():
 
     def __init__(self) -> None:
         self.state_counter = 0
+
+    def _create_terminal_states(self) -> Tuple[State, State]:
+        state_ini = State('state' + str(self.state_counter), False)
+        self.state_counter += 1
+        state_final = State('state' + str(self.state_counter), True)
+        self.state_counter += 1
+        return state_ini, state_final
 
     def _create_automaton_empty(
         self,
@@ -61,16 +68,13 @@ class REParser():
             Automaton that accepts the empty language.
 
         """
-        #---------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         # TO DO: Implement this method...
-        state_ini = State('state' + str(self.state_counter), False)
-        self.state_counter += 1
-        state_final = State('state'+ str(self.state_counter),True)
-        self.state_counter += 1
-        
-        return FiniteAutomaton([state_ini, state_final])
-        #---------------------------------------------------------------------
-        
+
+        initial_state, final_state = self._create_terminal_states()
+
+        return FiniteAutomaton([initial_state, final_state])
+        # ---------------------------------------------------------------------
 
     def _create_automaton_lambda(
         self,
@@ -82,19 +86,15 @@ class REParser():
             Automaton that accepts the empty string.
 
         """
-        #---------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         # TO DO: Implement this method...
-        state_ini = State('state' + str(self.state_counter), False)
-        self.state_counter += 1
-        state_final = State('state'+ str(self.state_counter),True)
-        self.state_counter += 1
-        
-        transition_ini_fin = Transition(None, state_final.name)
-        state_ini.add_transitions([transition_ini_fin])
+        initial_state, final_state = self._create_terminal_states()
 
-        return FiniteAutomaton([state_ini, state_final])
-        #---------------------------------------------------------------------
+        transition_ini_fin = Transition(None, final_state.name)
+        initial_state.add_transitions([transition_ini_fin])
 
+        return FiniteAutomaton([initial_state, final_state])
+        # ---------------------------------------------------------------------
 
     def _create_automaton_symbol(
         self,
@@ -110,20 +110,15 @@ class REParser():
             Automaton that accepts a symbol.
 
         """
-        #---------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         # TO DO: Implement this method...
-        
-        state_ini = State('state' + str(self.state_counter), False)
-        self.state_counter += 1
-        state_final = State('state'+ str(self.state_counter),True)
-        self.state_counter += 1
-        
-        transition_ini_fin = Transition(symbol, state_final.name)
-        state_ini.add_transitions([transition_ini_fin])
+        initial_state, final_state = self._create_terminal_states()
 
-        return FiniteAutomaton([state_ini, state_final])      
-        #---------------------------------------------------------------------
+        transition_ini_fin = Transition(symbol, final_state.name)
+        initial_state.add_transitions([transition_ini_fin])
 
+        return FiniteAutomaton([initial_state, final_state])
+        # ---------------------------------------------------------------------
 
     def _create_automaton_star(
         self,
@@ -139,35 +134,31 @@ class REParser():
             Automaton that accepts the Kleene star.
 
         """
-        #---------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         # TO DO: Implement this method...
-        state_ini = State('state' + str(self.state_counter), False)
-        self.state_counter += 1
-        state_final = State('state'+ str(self.state_counter),True)
-        self.state_counter += 1
-        states = [state_ini, state_final]
+        initial_state, final_state = self._create_terminal_states()
+        states = [initial_state, final_state]
 
         #--------- INIT - FINAL | INIT - AUTOMATON ---------#
-        t1 = Transition(None,state_final.name)
-        t2 = Transition(None,automaton.states[0].name)
-        
-        state_ini.add_transitions([t1,t2])
+        t1 = Transition(None, final_state.name)
+        t2 = Transition(None, automaton.states[0].name)
+
+        initial_state.add_transitions([t1, t2])
 
         #--------- FINAL - INIT | AUTOMATON - FINAL ---------#
         old_final = automaton.states[1]
         old_final.is_final = False
-        
-        t1 = Transition(None,state_ini.name)
-        t2 = Transition(None,state_final.name)
-        
-        state_final.add_transitions([t1])
+
+        t1 = Transition(None, initial_state.name)
+        t2 = Transition(None, final_state.name)
+
+        final_state.add_transitions([t1])
         old_final.add_transitions([t2])
-        
+
         states.extend(automaton.states)
 
-        return FiniteAutomaton(states)    
-        #---------------------------------------------------------------------
-
+        return FiniteAutomaton(states)
+        # ---------------------------------------------------------------------
 
     def _create_automaton_union(
         self,
@@ -185,37 +176,33 @@ class REParser():
             Automaton that accepts the union.
 
         """
-        #---------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         # TO DO: Implement this method...
-        state_ini = State('state' + str(self.state_counter), False)
-        self.state_counter += 1
-        state_final = State('state'+ str(self.state_counter),True)
-        self.state_counter += 1
-        states = [state_ini, state_final]
+        initial_state, final_state = self._create_terminal_states()
+        states = [initial_state, final_state]
 
         #--------- INIT - AUTO1 | INIT - AUTO2 ---------#
         t1 = Transition(None, automaton1.states[0].name)
-        t2 = Transition(None,automaton2.states[0].name)
-        
-        state_ini.add_transitions([t1,t2])
+        t2 = Transition(None, automaton2.states[0].name)
+
+        initial_state.add_transitions([t1, t2])
 
         #--------- AUTO1 - FINAL | AUTO2 - FINAL ---------#
         old_final1 = automaton1.states[1]
         old_final1.is_final = False
         old_final2 = automaton2.states[1]
         old_final2.is_final = False
-        
-        t1 = Transition(None,state_final.name)
-        
+
+        t1 = Transition(None, final_state.name)
+
         old_final1.add_transitions([t1])
         old_final2.add_transitions([t1])
-        
+
         states.extend(automaton1.states)
         states.extend(automaton2.states)
 
-        return FiniteAutomaton(states) 
-        #---------------------------------------------------------------------
-
+        return FiniteAutomaton(states)
+        # ---------------------------------------------------------------------
 
     def _create_automaton_concat(
         self,
@@ -233,40 +220,36 @@ class REParser():
             Automaton that accepts the concatenation.
 
         """
-        #---------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         # TO DO: Implement this method...
-        state_ini = State('state' + str(self.state_counter), False)
-        self.state_counter += 1
-        state_final = State('state'+ str(self.state_counter),True)
-        self.state_counter += 1
-        states = [state_ini, state_final]
+        initial_state, final_state = self._create_terminal_states()
+        states = [initial_state, final_state]
 
         #--------- INIT - AUTO1 ---------#
         t1 = Transition(None, automaton1.states[0].name)
-        
-        state_ini.add_transitions([t1])
+
+        initial_state.add_transitions([t1])
 
         #--------- AUTO1 - AUTO2 ---------#
         old_final1 = automaton1.states[1]
         old_final1.is_final = False
         old_init2 = automaton2.states[0]
-        
-        t1 = Transition(None,old_init2.name)
+
+        t1 = Transition(None, old_init2.name)
         old_final1.add_transitions([t1])
-        
+
         #--------- AUTO2 - FINAL ---------#
-        old_final2 = automaton1.states[1]
+        old_final2 = automaton2.states[1]
         old_final2.is_final = False
 
-        t1 = Transition(None,state_final.name)
+        t1 = Transition(None, final_state.name)
         old_final2.add_transitions([t1])
-                
+
         states.extend(automaton1.states)
         states.extend(automaton2.states)
-
-        return FiniteAutomaton(states)    
-        #---------------------------------------------------------------------
-
+        
+        return FiniteAutomaton(states)
+        # ---------------------------------------------------------------------
 
     def create_automaton(
         self,
@@ -284,7 +267,7 @@ class REParser():
         """
         if not re_string:
             return self._create_automaton_empty()
-        
+
         rpn_string = _re_to_rpn(re_string)
 
         stack: List[FiniteAutomaton] = []
@@ -305,5 +288,5 @@ class REParser():
                 stack.append(self._create_automaton_lambda())
             else:
                 stack.append(self._create_automaton_symbol(x))
-
+        
         return stack.pop()

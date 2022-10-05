@@ -1,7 +1,7 @@
 """Evaluation of automata."""
 from collections import defaultdict, deque
 from pstats import StatsProfile
-from typing import Set
+from typing import Set,List
 
 from automata.automaton import FiniteAutomaton, State
 
@@ -60,7 +60,7 @@ class FiniteAutomatonEvaluator():
         """
         #---------------------------------------------------------------------
         # TO DO: Implement this method...
-        visited_states = list()
+        visited_states: List[State] = list()
         to_visit_states = list(set_to_complete)
         
         while True:
