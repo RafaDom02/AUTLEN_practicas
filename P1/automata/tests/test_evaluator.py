@@ -153,6 +153,43 @@ class TestEvaluatorNumber(TestEvaluatorBase):
         self._check_accept("0.0.0", should_accept=False)
         self._check_accept("0-0.0", should_accept=False)
 
+class TestEvaluatorCicle(TestEvaluatorBase):
+    """Test for a fixed string."""
+
+    def _create_automata(self) -> FiniteAutomaton:
+
+        description = """
+        Automaton:
+
+            s1
+            s2
+            s3
+            s4 final
+            s5 final
+
+            s1 --> s2
+            s2 --> s3
+            s2 -b-> s5
+            s3 --> s1
+            s3 -a-> s4
+            s3 -b-> s3
+            s5 -b-> s5
+        """
+
+        return AutomataFormat.read(description)
+
+    def test_cicle(self) -> None:
+        """ Test for a fixed string. """
+        self._check_accept("b", should_accept=True)
+        self._check_accept("bb", should_accept=True)
+        self._check_accept("bbbbbbbbb", should_accept=True)
+        self._check_accept("a", should_accept=True)
+        self._check_accept("b", should_accept=True)
+        self._check_accept("aa", should_accept=False)
+        self._check_accept("bbbbba", should_accept=True)
+        self._check_accept("bbbbbaa", should_accept=False)
+        self._check_accept("", should_accept=False)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -8,7 +8,6 @@ from typing import (
     Tuple,
 )
 
-from automata.automaton_evaluator import *
 
 class State():
     """
@@ -52,7 +51,6 @@ class State():
         """
         self.transitions.extend(transitions)
         self.transitions = list(set(self.transitions))
-    
 
 
 class Transition():
@@ -97,8 +95,6 @@ class Transition():
         return hash((self.symbol, self.state))
 
 
-
-
 class FiniteAutomaton():
     """
     Definition of an automaton.
@@ -112,7 +108,7 @@ class FiniteAutomaton():
     states: List[State]
     name2state: Dict[str, State]
     _deterministic_count: int
-    
+
     def __init__(
         self,
         states: List[State],
@@ -131,10 +127,9 @@ class FiniteAutomaton():
             raise ValueError(
                 "There are transitions to an undefined state",
             )
-        
+
         self.states = states
         self.name2state = {s.name: s for s in self.states}
-
 
     def __repr__(self) -> str:
         return (
@@ -146,26 +141,33 @@ class FiniteAutomaton():
         # Buscamos si ya existe primero el estado
         found = False
         i = 0
-
+        
         while i < len(det_states) and found == False:
             if det_states[i][0] == evaluator.current_states:
                 found = True
-            i += 1
-        
-        if found == False or len(det_states) == 0:
+            else:
+                i += 1
+
+        if found == False:
+
+            if len(evaluator.current_states) == 0:
+                state = State("empty", False)
+                det_states.append((set(), state))
+                return "empty"
+
             # En este caso nos toca crear al nuevo estado
             self._deterministic_count += 1
-            state = State("q_det" + str(self._deterministic_count), evaluator.is_accepting())
-            
+            state = State("q" + str(self._deterministic_count),
+                          evaluator.is_accepting())
+
             # Añade el conjunto y al estado correspondiente al conjunto
-            det_states.append((evaluator.current_states.copy(), state))
+            det_states.append((evaluator.current_states.copy(),state ))
 
             # Devolvemos el nombre para las transiciones
             return state.name
-        else:
 
-            # Devolvemos el nombre para las transiciones
-            return det_states[i][1].name
+        # Devolvemos el nombre para las transiciones
+        return det_states[i][1].name
 
     def _get_dictionary(self) -> 'set[str]':
         dict = set()
@@ -177,8 +179,8 @@ class FiniteAutomaton():
 
         return dict
 
-
     def to_deterministic(self) -> 'FiniteAutomaton':
+        from automata.automaton_evaluator import FiniteAutomatonEvaluator
         """
         Return a equivalent deterministic automaton.
 
@@ -186,7 +188,7 @@ class FiniteAutomaton():
             Equivalent deterministic automaton.
 
         """
-        #---------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         """
         El evaluador nos ayudará a ver las transiciones que se generan.
         Además en el constructor constuye al conjunto inicial de estados
@@ -196,29 +198,32 @@ class FiniteAutomaton():
         evaluator = FiniteAutomatonEvaluator(self)
         det_states: List[Tuple] = list()
 
-        self._get_deterministic_state(det_states,evaluator)
+        self._get_deterministic_state(det_states, evaluator)
         dictionary = self._get_dictionary()
 
         # Ahora debemos ver a donde vamos con cada conjunto y símbolo posible
-        for i in range(0,len(det_states)):
+
+        i = 0
+        while i < len(det_states):
 
             for symbol in dictionary:
                 current_set = det_states[i][0].copy()
 
                 evaluator.current_states = current_set
                 evaluator.process_symbol(symbol)
-                
+
                 # Añadimos la transición al estado en cuestión
-                det_states[i][1].add_transitions([Transition(symbol,self._get_deterministic_state(det_states,evaluator))])
-        
+                det_states[i][1].add_transitions(
+                    [Transition(symbol, self._get_deterministic_state(det_states, evaluator))])
+            i=i+1
+
         final_states = []
 
         for d in det_states:
             final_states.append(d[1])
 
-        return FiniteAutomaton(final_states)        
-        #---------------------------------------------------------------------
-
+        return FiniteAutomaton(final_states)
+        # ---------------------------------------------------------------------
 
     def to_minimized(self) -> 'FiniteAutomaton':
         """
@@ -228,12 +233,8 @@ class FiniteAutomaton():
             Equivalent minimal automaton.
 
         """
-        #---------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         # TO DO: Implement this method...
-        
-        raise NotImplementedError("This method must be implemented.")        
-        #---------------------------------------------------------------------
 
-
-
-
+        raise NotImplementedError("This method must be implemented.")
+        # ---------------------------------------------------------------------
