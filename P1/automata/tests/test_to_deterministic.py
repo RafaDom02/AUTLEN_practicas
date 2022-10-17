@@ -150,7 +150,170 @@ class TestTransform(ABC, unittest.TestCase):
         expected = AutomataFormat.read(expected_str)
 
         self._check_transform(automaton, expected)
+    
+    def test_case4(self) -> None:
+        """Test Case 4."""
+        automaton_str = """
+        Automaton:
+        
+        q0
+        q1
+        q2
+        q3
+        q4 final
 
+        q0 -a-> q0
+        q0 -b-> q0
+        q0 -b-> q1
+        q1 -a-> q1
+        q1 -b-> q2
+        q2 -a-> q3
+        q2 -b-> q2
+        q3 -a-> q3
+        q3 -a-> q4
+        q3 -b-> q3
+        q4 -a-> q0
+        q4 -b-> q0
+        """
+
+        automaton = AutomataFormat.read(automaton_str)
+
+        expected_str = """
+        Automaton:
+        
+        q0
+        q0q1
+        q0q1q2
+        q0q1q3
+        q0q1q2q3
+        q0q1q3q4 final
+
+        q0 -a-> q0
+        q0 -b-> q0q1
+        q0q1 -a-> q0q1
+        q0q1 -b-> q0q1q2
+        q0q1q2 -a-> q0q1q3
+        q0q1q2 -b-> q0q1q2
+        q0q1q3 -a-> q0q1q3q4
+        q0q1q3 -b-> q0q1q2q3
+        q0q1q2q3 -a-> q0q1q3q4
+        q0q1q2q3 -b-> q0q1q2q3
+        q0q1q3q4 -a-> q0q1q3q4
+        q0q1q3q4 -b-> q0q1q2q3
+
+        """
+
+        expected = AutomataFormat.read(expected_str)
+
+        self._check_transform(automaton, expected)
+
+    def test_case5(self) -> None:
+        """Test Case 5."""
+        automaton_str = """
+        Automaton:
+        
+        q0
+        q1
+        qf final
+        
+        q0 -0-> q0
+        q0 -1-> q0
+        q0 -1-> q1
+        q1 -1-> qf
+        """
+
+        automaton = AutomataFormat.read(automaton_str)
+
+        expected_str = """
+        Automaton:
+        
+        q0
+        q0q1
+        q0q1qf final
+        
+        q0 -0-> q0
+        q0 -1-> q0q1
+        q0q1 -0-> q0
+        q0q1 -1-> q0q1qf
+        q0q1qf -1-> q0q1qf
+        q0q1qf -0-> q0
+        
+        """
+
+        expected = AutomataFormat.read(expected_str)
+
+        self._check_transform(automaton, expected)
+
+    def test_case6(self) -> None:
+        """Test Case 6."""
+        automaton_str = """
+        Automaton:
+        
+        q0
+        q1
+        q2
+        q3
+        q4
+        q5 final
+
+        q0 ---> q1
+        q0 -+-> q1
+        q0 --> q1
+        q1 -d-> q1
+        q1 -d-> q4
+        q1 -.-> q2
+        q2 -d-> q3
+        q3 -d-> q3
+        q3 --> q5
+        q4 -.-> q3  
+        """
+
+        automaton = AutomataFormat.read(automaton_str)
+
+        expected_str = """
+        Automaton:
+        
+        q0q1
+        q1
+        q2
+        q1q4
+        q2q3q5 final
+        q3q5 final
+        empty
+        
+        q0q1 -d-> q1q4
+        q0q1 ---> q1
+        q0q1 -+-> q1
+        q0q1 -.-> q2
+        q1 -d-> q1q4
+        q1 ---> empty
+        q1 -+-> empty
+        q1 -.-> q2
+        q2 -d-> q3q5
+        q2 ---> empty
+        q2 -+-> empty
+        q2 -.-> empty
+        q1q4 -d-> q1q4
+        q1q4 ---> empty
+        q1q4 -+-> empty
+        q1q4 -.-> q2q3q5
+        q2q3q5 -d-> q3q5
+        q2q3q5 ---> empty
+        q2q3q5 -+-> empty
+        q2q3q5 -.-> empty
+        q3q5 -d-> q3q5
+        q3q5 ---> empty
+        q3q5 -+-> empty
+        q3q5 -.-> empty
+        empty -d-> empty
+        empty ---> empty
+        empty -+-> empty
+        empty -.-> empty
+        """
+
+        expected = AutomataFormat.read(expected_str)
+
+        self._check_transform(automaton, expected)
 
 
 
