@@ -1,10 +1,14 @@
 """Automaton implementation."""
+from tokenize import String
 from typing import (
     Optional,
     Set,
     List,
     Dict,
+    Tuple,
 )
+
+from automata.automaton_evaluator import *
 
 class State():
     """
@@ -107,6 +111,7 @@ class FiniteAutomaton():
 
     states: List[State]
     name2state: Dict[str, State]
+    _deterministic_count: int
     
     def __init__(
         self,
@@ -137,6 +142,41 @@ class FiniteAutomaton():
             f"states={self.states!r}, "
         )
 
+    def _get_deterministic_state(self, det_states: List[Tuple], evaluator) -> String:
+        # Buscamos si ya existe primero el estado
+        found = False
+        i = 0
+
+        while i < len(det_states) and found == False:
+            if det_states[i][0] == evaluator.current_states:
+                found = True
+            i += 1
+        
+        if found == False or len(det_states) == 0:
+            # En este caso nos toca crear al nuevo estado
+            self._deterministic_count += 1
+            state = State("q_det" + str(self._deterministic_count), evaluator.is_accepting())
+            
+            # Añade el conjunto y al estado correspondiente al conjunto
+            det_states.append((evaluator.current_states.copy(), state))
+
+            # Devolvemos el nombre para las transiciones
+            return state.name
+        else:
+
+            # Devolvemos el nombre para las transiciones
+            return det_states[i][1].name
+
+    def _get_dictionary(self) -> 'set[str]':
+        dict = set()
+
+        for state in self.states:
+            for t in state.transitions:
+                if t.symbol != None:
+                    dict.add(t.symbol)
+
+        return dict
+
 
     def to_deterministic(self) -> 'FiniteAutomaton':
         """
@@ -147,9 +187,36 @@ class FiniteAutomaton():
 
         """
         #---------------------------------------------------------------------
-        # TO DO: Implement this method...
+        """
+        El evaluador nos ayudará a ver las transiciones que se generan.
+        Además en el constructor constuye al conjunto inicial de estados
+        """
+
+        self._deterministic_count = 0
+        evaluator = FiniteAutomatonEvaluator(self)
+        det_states: List[Tuple] = list()
+
+        self._get_deterministic_state(det_states,evaluator)
+        dictionary = self._get_dictionary()
+
+        # Ahora debemos ver a donde vamos con cada conjunto y símbolo posible
+        for i in range(0,len(det_states)):
+
+            for symbol in dictionary:
+                current_set = det_states[i][0].copy()
+
+                evaluator.current_states = current_set
+                evaluator.process_symbol(symbol)
+                
+                # Añadimos la transición al estado en cuestión
+                det_states[i][1].add_transitions([Transition(symbol,self._get_deterministic_state(det_states,evaluator))])
         
-        raise NotImplementedError("This method must be implemented.")        
+        final_states = []
+
+        for d in det_states:
+            final_states.append(d[1])
+
+        return FiniteAutomaton(final_states)        
         #---------------------------------------------------------------------
 
 
