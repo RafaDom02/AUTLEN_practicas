@@ -1,4 +1,5 @@
 """Automaton implementation."""
+from nis import cat
 from tokenize import String
 from typing import (
     Optional,
@@ -225,6 +226,47 @@ class FiniteAutomaton():
         return FiniteAutomaton(final_states)
         # ---------------------------------------------------------------------
 
+    #states: List[State]
+    #name2state: Dict[str, State]
+    #_deterministic_count: int
+
+    def _eliminate_inaccesible_states(self) -> None:
+        to_visit: List[State] = list(self.states[0])
+        visited: List[State] = list()
+
+        while len(to_visit) != 0:
+            state = to_visit.pop(0)
+            
+            if state not in visited:
+                for t in state.transitions:
+                    next_state = self.name2state[t.state]
+                    to_visit.append(next_state)
+
+                visited.append(state)
+
+        self.states = visited
+
+    def _get_index_of_det_transition(self,symbol:str ,pos:int) -> int:
+        state: State = self.states[pos]
+        selected: Transition = None
+        
+        for t in state.transitions:
+            if t.symbol == symbol:
+                selected = t
+        
+        return self.states.index(self.name2state[selected.state])
+        
+    def _equivalent_class_transitions(self,classes: List[int], pos1: int, pos2: int) -> bool:
+        dictionary = self._get_dictionary()
+        
+        for symbol in dictionary:
+            final1 = classes[self._get_index_of_det_transition(symbol, pos1)]
+            final2 = classes[self._get_index_of_det_transition(symbol, pos2)]
+            if final1 != final2:
+                return False
+        
+        return True
+
     def to_minimized(self) -> 'FiniteAutomaton':
         """
         Return a equivalent minimal automaton.
@@ -234,7 +276,46 @@ class FiniteAutomaton():
 
         """
         # ---------------------------------------------------------------------
-        # TO DO: Implement this method...
+        classes : List[int] = list()
+        # Eliminamos los estados inaccesibles
+        self._eliminate_inaccesible_states()
+        
+        # Primera iteración: Finales = 1 y No Finales = 0
+        for state in self.states:
+            classes.append(1 if state.is_final else 0)
+        
+        # N-ésimas iteraciones: Solo paramos si las clases no han cambiado
+        changed = True
+        while changed:
+            new_classes:List[int] = [-1 for state in self.states]
+            
+            class_id = 0
+            try:
+                while True:
+                    j = new_classes.index(-1)
+                    new_classes[j] = class_id
+                    
+                    for i in range(j+1, len(classes)):
+                        if new_classes[i] == -1:                        # Comprobamos que no tiene clase de equivalencia asignada
+                            if classes[j] == classes[i]:                # Comprobamos que tienen la misma clase de equivalencia anterior
+                                if self._equivalent_class_transitions(classes,i,j): # Transita, con cada símbolo, a las mismas clases de equivalencia
+                                    classes[j] = classes[i]
+                    
+                    class_id += 1
+            except ValueError:
+                pass
+            
+            # Check final: ¿Son iguales?
+            changed = False
 
-        raise NotImplementedError("This method must be implemented.")
+            for i in range(0,len(classes)):
+                if classes[i] != new_classes[i]:
+                    changed = True
+            
+            # Actualizamos las clases de equivalencia
+            classes = new_classes
+        
+        # Crear el automata  
+
+        return FiniteAutomaton()
         # ---------------------------------------------------------------------
