@@ -1,5 +1,6 @@
 """Automaton implementation."""
 from nis import cat
+from operator import indexOf
 from tokenize import String
 from typing import (
     Optional,
@@ -231,7 +232,8 @@ class FiniteAutomaton():
     #_deterministic_count: int
 
     def _eliminate_inaccesible_states(self) -> None:
-        to_visit: List[State] = list(self.states[0])
+        to_visit: List[State] = list()
+        to_visit.append(self.states[0])
         visited: List[State] = list()
 
         while len(to_visit) != 0:
@@ -267,6 +269,32 @@ class FiniteAutomaton():
         
         return True
 
+    def _get_transitions_from_index(self, class_list: List[int], pos:int) -> List[Transition]:
+        dict = self._get_dictionary()
+        transitions: List[Transition] = list()
+
+        for symbol in dict:
+            transitions.append(Transition(symbol, "q{}".format(class_list[self._get_index_of_det_transition(symbol,pos)])))
+
+        return transitions
+
+    def _get_deterministic_from_classes(self, class_list: List[int]) -> list[State]:
+        
+        new_states = list()
+        classes = list(set(class_list))
+
+        # Pasada para obtener los estados
+        for c in classes:
+            # Creamos el estado
+            state = State("q{}".format(c), self.states[class_list.index(c)].is_final)
+            new_states.append(state)
+
+            # Buscamos las transiciones a las otras clases a partir de una base
+            base_state = class_list.index(c)
+            state.add_transitions(self._get_transitions_from_index(class_list, base_state))
+        
+        return new_states
+
     def to_minimized(self) -> 'FiniteAutomaton':
         """
         Return a equivalent minimal automaton.
@@ -288,7 +316,6 @@ class FiniteAutomaton():
         changed = True
         while changed:
             new_classes:List[int] = [-1 for state in self.states]
-            
             class_id = 0
             try:
                 while True:
@@ -299,9 +326,10 @@ class FiniteAutomaton():
                         if new_classes[i] == -1:                        # Comprobamos que no tiene clase de equivalencia asignada
                             if classes[j] == classes[i]:                # Comprobamos que tienen la misma clase de equivalencia anterior
                                 if self._equivalent_class_transitions(classes,i,j): # Transita, con cada símbolo, a las mismas clases de equivalencia
-                                    classes[j] = classes[i]
+                                    new_classes[i] = new_classes[j]
                     
                     class_id += 1
+                    
             except ValueError:
                 pass
             
@@ -315,7 +343,6 @@ class FiniteAutomaton():
             # Actualizamos las clases de equivalencia
             classes = new_classes
         
-        # Crear el automata  
-
-        return FiniteAutomaton()
+        # Crear el automata
+        return FiniteAutomaton(self._get_deterministic_from_classes(classes))
         # ---------------------------------------------------------------------
