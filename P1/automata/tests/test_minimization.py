@@ -15,8 +15,7 @@ class TestMinimized(ABC, unittest.TestCase):
         expected: FiniteAutomaton,
     ) -> None:
         """Test that the transformed automaton is as the expected one."""
-        transformed = automaton.to_deterministic()
-        transformed = transformed.to_minimized()
+        transformed = automaton.to_minimized()
 
         points1 = write_dot(transformed)
         points2 = write_dot(expected)

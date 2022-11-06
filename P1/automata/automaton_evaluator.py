@@ -1,9 +1,10 @@
 """Evaluation of automata."""
 from collections import defaultdict, deque
 from pstats import StatsProfile
-from typing import Set,List
+from typing import Set, List
 
 from automata.automaton import FiniteAutomaton, State
+
 
 class FiniteAutomatonEvaluator():
     """
@@ -23,11 +24,10 @@ class FiniteAutomatonEvaluator():
     def __init__(self, automaton: FiniteAutomaton) -> None:
         self.automaton = automaton
         current_states: Set[State] = {
-            self.automaton.states[0],  
+            self.automaton.states[0],
         }
         self._complete_lambdas(current_states)
         self.current_states = current_states
-
 
     def process_symbol(self, symbol: str) -> None:
         """
@@ -37,20 +37,18 @@ class FiniteAutomatonEvaluator():
             symbol: Symbol to consume.
 
         """
-        #---------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         # TO DO: Implement this method...
         expanded_states: Set[State] = set()
 
         for state in self.current_states:
-            for transition in state.transitions:
-                if transition.symbol == symbol:
-                    expanded_states.add(self.automaton.name2state[transition.state])
-        
+            for t in state.search_transitions(symbol):
+                expanded_states.add(self.automaton.name2state[t.state])
+
         self.current_states = expanded_states
         self._complete_lambdas(self.current_states)
-        #---------------------------------------------------------------------
+        # ---------------------------------------------------------------------
 
-        
     def _complete_lambdas(self, set_to_complete: Set[State]) -> None:
         """
         Add states reachable with lambda transitions to the set.
@@ -58,28 +56,26 @@ class FiniteAutomatonEvaluator():
         Args:
             set_to_complete: Current set of states to be completed.
         """
-        #---------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         # TO DO: Implement this method...
         visited_states: List[State] = list()
         to_visit_states = list(set_to_complete)
-        
+
         while True:
-            if(len(to_visit_states) == 0):
+            if (len(to_visit_states) == 0):
                 return
-            
+
             current_state = to_visit_states.pop()
 
             if (visited_states.count(current_state) == 0):
-                for transition in current_state.transitions:
-                    if transition.symbol == None:
-                        state = self.automaton.name2state[transition.state]
-                        to_visit_states.append(state)
-                        set_to_complete.add(state)
-            
-                visited_states.append(current_state)        
-        #---------------------------------------------------------------------
+                for transition in current_state.get_lambdas():
+                    state = self.automaton.name2state[transition.state]
+                    to_visit_states.append(state)
+                    set_to_complete.add(state)
 
-        
+                visited_states.append(current_state)
+        # ---------------------------------------------------------------------
+
     def process_string(self, string: str) -> None:
         """
         Process a full string of symbols.
@@ -91,18 +87,16 @@ class FiniteAutomatonEvaluator():
         for symbol in string:
             self.process_symbol(symbol)
 
-
     def is_accepting(self) -> bool:
         """Check if the current state is an accepting one."""
-        #---------------------------------------------------------------------
+        # ---------------------------------------------------------------------
         # TO DO: Implement this method...
         for state in self.current_states:
             if state.is_final == True:
                 return True
-        
+
         return False
-        #---------------------------------------------------------------------
-        
+        # ---------------------------------------------------------------------
 
     def accepts(self, string: str) -> bool:
         """
@@ -119,4 +113,3 @@ class FiniteAutomatonEvaluator():
             self.current_states = old_states
 
         return accepted
-

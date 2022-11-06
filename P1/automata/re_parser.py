@@ -52,10 +52,21 @@ class REParser():
         self.state_counter = 0
 
     def _create_terminal_states(self) -> Tuple[State, State]:
+        """
+        This is a new method for creating both beginning and ending
+        states for the standard procedure of conversion of regular expressions
+        (in Kleene's syntax) into an non deterministic automaton.
+
+        Returns:
+            Both initial and final states
+        """
+
         state_ini = State('state' + str(self.state_counter), False)
         self.state_counter += 1
+        
         state_final = State('state' + str(self.state_counter), True)
         self.state_counter += 1
+
         return state_ini, state_final
 
     def _create_automaton_empty(
