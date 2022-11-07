@@ -17,16 +17,6 @@ class TestMinimized(ABC, unittest.TestCase):
         """Test that the transformed automaton is as the expected one."""
         transformed = automaton.to_minimized()
 
-        points1 = write_dot(transformed)
-        points2 = write_dot(expected)
-
-        f = open("test_minimized.dot","w")
-        f.write(points1)
-        f.close()
-
-        f = open("test_minimized_expected.dot","w")
-        f.write(points2)
-        f.close()
         equiv_map = deterministic_automata_isomorphism(
             expected,
             transformed,
@@ -35,7 +25,7 @@ class TestMinimized(ABC, unittest.TestCase):
         self.assertTrue(equiv_map is not None)
 
     def test_case1(self) -> None:
-        """Test Case 1."""
+        """Test Case 1. Reduce al maximo el automata para que se quede solamente en dos estado uno inicial y otro final"""
         automaton_str = """
         Automaton:
         
@@ -79,7 +69,7 @@ class TestMinimized(ABC, unittest.TestCase):
         self._check_transform(automaton, expected)
 
     def test_case2(self) -> None:
-        """Test Case 2."""
+        """Test Case 2. Creamos dos caminos distintos pero con la misma cantidad de estados y transiciones para que se junten ambos caminos en uno"""
         automaton_str = """
         Automaton:
         
@@ -123,7 +113,7 @@ class TestMinimized(ABC, unittest.TestCase):
         self._check_transform(automaton, expected)
 
     def test_case3(self) -> None:
-        """Test Case 3."""
+        """Test Case 3. Prueba la fusion de dos estados que estan unidos linealmente"""
         automaton_str = """
         Automaton:
         
@@ -177,5 +167,123 @@ class TestMinimized(ABC, unittest.TestCase):
         expected = AutomataFormat.read(expected_str)
         
         self._check_transform(automaton, expected)
+
+    def test_case4(self) -> None:
+        """Test Case 4. Test parecido al test3 pero que creando un bucle, uniendo el ultimo estado con el inicial"""
+        automaton_str = """
+        Automaton:
+        
+        q0
+        q1 final
+        q2
+        q3 final
+        q4
+        q5 final
+
+        q0 -a-> q1
+        q0 -b-> q3
+        q1 -a-> q2
+        q1 -b-> q1
+        q2 -a-> q1
+        q2 -b-> q5
+        q3 -a-> q4
+        q3 -b-> q3
+        q4 -a-> q3
+        q4 -b-> q5
+        q5 -a-> q0
+        q5 -b-> q0
+        """
+
+        automaton = AutomataFormat.read(automaton_str)
+
+        expected_str = """
+        Automaton:
+        
+        q0
+        q1 final
+        q2
+        qf final
+        
+        q0 -a-> q1
+        q0 -b-> q1
+        q1 -a-> q2
+        q1 -b-> q1
+        q2 -a-> q1
+        q2 -b-> qf
+        qf -a-> q0
+        qf -b-> q0
+        """
+
+        expected = AutomataFormat.read(expected_str)
+        
+        self._check_transform(automaton, expected)
+
+    def test_case5(self) -> None:
+        """Test Case 5. Creamos un automata no determinista, lo pasamos a determinista y a continuación le hacemos la minimizacion"""
+        automaton_str = """
+        Automaton:
+        
+        q0
+        q1
+        q2
+        q3
+        q4
+        q5 final
+
+        q0 ---> q1
+        q0 -+-> q1
+        q0 --> q1
+        q1 -d-> q1
+        q1 -d-> q4
+        q1 -.-> q2
+        q2 -d-> q3
+        q3 -d-> q3
+        q3 --> q5
+        q4 -.-> q3  
+        """
+
+        automaton = AutomataFormat.read(automaton_str)
+
+        expected_str = """
+        Automaton:
+        
+        q0
+        q1
+        q2
+        q3
+        q4 final
+        empty
+        
+        q0 -.-> q3
+        q0 ---> q2
+        q0 -+-> q2
+        q0 -d-> q1
+        q1 -.-> q4
+        q1 ---> empty
+        q1 -+-> empty
+        q1 -d-> q1
+        q2 -.-> q3
+        q2 ---> empty
+        q2 -+-> empty
+        q2 -d-> q1
+        q3 -.-> empty
+        q3 ---> empty
+        q3 -+-> empty
+        q3 -d-> q4
+        q4 -.-> empty
+        q4 ---> empty
+        q4 -+-> empty
+        q4 -d-> q4
+        empty -.-> empty
+        empty ---> empty
+        empty -+-> empty
+        empty -d-> empty
+        """
+
+        expected = AutomataFormat.read(expected_str)
+
+        self._check_transform(automaton, expected)
+
+
 if __name__ == '__main__':
     unittest.main()

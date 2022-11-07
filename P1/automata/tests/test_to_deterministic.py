@@ -3,7 +3,7 @@ import unittest
 from abc import ABC
 
 from automata.automaton import FiniteAutomaton
-from automata.utils import AutomataFormat, deterministic_automata_isomorphism
+from automata.utils import AutomataFormat, deterministic_automata_isomorphism, write_dot
 
 
 class TestTransform(ABC, unittest.TestCase):
@@ -23,8 +23,9 @@ class TestTransform(ABC, unittest.TestCase):
 
         self.assertTrue(equiv_map is not None)
 
+
     def test_case1(self) -> None:
-        """Test Case 1."""
+        """Test Case 1. Test basico de comprobacion. Solo dos estado y cada uno solo utiliza 1 de los dos simbolos existentes"""
         automaton_str = """
         Automaton:
         
@@ -58,7 +59,7 @@ class TestTransform(ABC, unittest.TestCase):
         self._check_transform(automaton, expected)
     
     def test_case2(self) -> None:
-        """Test Case 2."""
+        """Test Case 2. Test parecido al 1 pero un poco más complejo para comprobar su buen funcionamiento"""
         automaton_str = """
         Automaton:
         
@@ -96,7 +97,7 @@ class TestTransform(ABC, unittest.TestCase):
         self._check_transform(automaton, expected)
     
     def test_case3(self) -> None:
-        """Test Case 3."""
+        """Test Case 3. Test complejo, aseguramos deshacernos del q0 (ya que todos sus simbolos son lambda) y de estados ineficientes (q7)"""
         automaton_str = """
         Automaton:
         
@@ -152,7 +153,7 @@ class TestTransform(ABC, unittest.TestCase):
         self._check_transform(automaton, expected)
     
     def test_case4(self) -> None:
-        """Test Case 4."""
+        """Test Case 4. Buscamos deshacernos del bucle q0-q4 y minimizarlo visualmente para que sea q5-q6"""
         automaton_str = """
         Automaton:
         
@@ -208,7 +209,7 @@ class TestTransform(ABC, unittest.TestCase):
         self._check_transform(automaton, expected)
 
     def test_case5(self) -> None:
-        """Test Case 5."""
+        """Test Case 5. Caso parecido a test2 pero con q0 teniendo transiciones con simbolos repetidos"""
         automaton_str = """
         Automaton:
         
@@ -245,7 +246,7 @@ class TestTransform(ABC, unittest.TestCase):
         self._check_transform(automaton, expected)
 
     def test_case6(self) -> None:
-        """Test Case 6."""
+        """Test Case 6. Ejemplo complejo para visualizar/comprobar la correcta creacion de un estado sumidero"""
         automaton_str = """
         Automaton:
         

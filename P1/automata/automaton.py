@@ -447,7 +447,8 @@ class FiniteAutomaton():
 
             # Debemos comprobar el hecho puesto que asumimos por defecto que no lo es
             if not self._check_deterministic():
-                self.to_deterministic()
+                det = self.to_deterministic()
+                return det.to_minimized()
 
         classes: List[int] = list()
         # Eliminamos los estados inaccesibles
