@@ -47,6 +47,7 @@ if __name__ == "__main__":
 
     source = inspect.getsource(print_if_pos)
     my_ast = ast.parse(source)
+    dot.visit(my_ast)
     print("Test de ASTDotVisitor --> mirar graphic.dot")
 
     source = inspect.getsource(test_ast)

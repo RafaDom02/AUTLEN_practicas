@@ -1,5 +1,6 @@
 import ast
 from ast import *
+import copy
 from typing import Any
 import inspect
 
@@ -95,5 +96,17 @@ class ASTUnroll(NodeTransformer):
         if isinstance(node.target,ast.Name):
             if isinstance(node.iter, ast.List):
                 # De momento solo se carga al for
-                return node.body
+                new_body = list()
+
+                for elem in node.iter.elts:
+                    ncopy = copy.deepcopy(node)
+                    repl = ASTReplaceVar(node.target.id,elem)
+                    repl.visit(ncopy)
+                    new_body.extend(ncopy.body)
+                
+                extended_body = list()
+                for elem in new_body:
+                    extended_body.append(self.visit(elem))
+                
+                return extended_body
         return node
