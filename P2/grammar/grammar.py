@@ -64,6 +64,8 @@ class Grammar:
         self.non_terminals = non_terminals
         self.productions = productions
         self.axiom = axiom
+        self.nt_firsts = self._compute_firsts()
+        self.nt_follow = self._compute_follows()
 
     def __repr__(self) -> str:
         return (
@@ -73,6 +75,54 @@ class Grammar:
             f"axiom={self.axiom!r}, "
             f"productions={self.productions!r})"
         )
+    
+    def _compute_firsts(self) -> Dict[str, set[str]]:
+        old_table: Dict[str,set[str]]= dict()
+        equals = False
+        # Creamos las entradas de la tabla
+        for nt in self.non_terminals:
+            old_table[nt] = set()
+        
+        # Iteramos sobre la tabla
+        while not equals:
+            new_table = old_table.copy()
+            for nt in old_table.keys():
+                for p in self.productions[nt]:
+                    stop = False
+                    i = 0
+
+                    if p == '':
+                        new_table[nt].add('')
+                    
+                    while i < len(p) and not stop:
+                        if p[i] in self.terminals:
+                            stop = True
+                            new_table[nt].add(p[i])
+                        elif p[i] in self.non_terminals:
+                            next_first = old_table[p[i]].copy()
+                            
+                            if "" not in next_first or i+1 == len(p):
+                                stop = True
+                            else:
+                                next_first -= {''}
+                            
+                            new_table[nt].update(next_first)
+
+                        i += 1
+            
+            # Vemos si son iguales las tablas
+            equals = True
+            #print(new_table)
+            #print(old_table)
+            
+            for nt in old_table.keys():
+                if old_table[nt] != new_table[nt]:
+                    equals = False
+                    break
+            
+            old_table = new_table
+
+        return new_table            
 
 
     def compute_first(self, sentence: str) -> AbstractSet[str]:
@@ -85,9 +135,42 @@ class Grammar:
         Returns:
             First set of str.
         """
+        
+        if sentence == "":
+            return {''}
 
-	# TO-DO: Complete this method for exercise 3...
+        # "Y+i"
+        symbols = list(sentence)
+        # ['Y','+','i']
+                
+        i = 0
+        stop = False
+        firsts = set()
 
+        while i < len(symbols) and not stop:
+            sym = symbols[i]
+            if sym in self.terminals:
+                stop = True
+                firsts.add(sym)
+            elif sym in self.non_terminals:
+                next_first = self.nt_firsts[sym].copy()
+
+                if '' not in next_first or i+1 == len(symbols):
+                    stop = True
+                else:
+                    next_first -= {''}
+                
+                
+                firsts.update(next_first)
+                #print(firsts, sym, next_first)
+            
+            i += 1
+
+        return firsts
+
+        
+    def _compute_follows(self):
+        return None
 
     def compute_follow(self, symbol: str) -> AbstractSet[str]:
         """
@@ -219,11 +302,12 @@ class LL1Table:
             if elem in self.non_terminals:
                 row = self.cells[elem]
                 n_sym = row.get(input_string[index])
-                #print(row, input_string[index],n_sym)
                 if n_sym != None:
-                    texto = list(n_sym)
-                    texto.reverse()
-                    stack.extend(texto)
+                    # Si la regla es λ, no hay que añadir nada al stack
+                    if n_sym != "":
+                        texto = list(n_sym)
+                        texto.reverse()
+                        stack.extend(texto)
                 else:
                     raise SyntaxError()
                 
