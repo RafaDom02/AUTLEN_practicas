@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
+import copy
 from typing import AbstractSet, Collection, MutableSet, Optional, Dict, List, Optional
 
 class RepeatedCellError(Exception):
@@ -8,6 +9,17 @@ class RepeatedCellError(Exception):
 
 class SyntaxError(Exception):
     """Exception for parsing errors."""
+
+def find_all_strings(substring, string):
+    """ 
+    Está pensado para iterar en un bucle 
+    mediante yield en vez de return
+    """
+
+    i = string.find(substring)
+    while i != -1:
+        yield i
+        i = string.find(substring, i+1)
 
 class Grammar:
     """
@@ -85,7 +97,7 @@ class Grammar:
         
         # Iteramos sobre la tabla
         while not equals:
-            new_table = old_table.copy()
+            new_table = copy.deepcopy(old_table)
             for nt in old_table.keys():
                 for p in self.productions[nt]:
                     stop = False
@@ -99,7 +111,7 @@ class Grammar:
                             stop = True
                             new_table[nt].add(p[i])
                         elif p[i] in self.non_terminals:
-                            next_first = old_table[p[i]].copy()
+                            next_first = copy.deepcopy(old_table[p[i]])
                             
                             if "" not in next_first or i+1 == len(p):
                                 stop = True
@@ -153,7 +165,7 @@ class Grammar:
                 stop = True
                 firsts.add(sym)
             elif sym in self.non_terminals:
-                next_first = self.nt_firsts[sym].copy()
+                next_first = copy.deepcopy(self.nt_firsts[sym])
 
                 if '' not in next_first or i+1 == len(symbols):
                     stop = True
@@ -163,6 +175,8 @@ class Grammar:
                 
                 firsts.update(next_first)
                 #print(firsts, sym, next_first)
+            else:
+                raise ValueError("Symbol not in grammar")
             
             i += 1
 
@@ -170,7 +184,55 @@ class Grammar:
 
         
     def _compute_follows(self):
-        return None
+        old_table: Dict[str,set[str]]= dict()
+        equals = False
+
+        # Creamos las entradas de la tabla
+        for nt in self.non_terminals:
+            if nt == self.axiom:
+                old_table[nt] = {'$'}
+            else:
+                old_table[nt] = set()
+        
+        while not equals:
+            new_table = copy.deepcopy(old_table)
+
+            for nt in old_table.keys():
+                for p in self.productions[nt]:
+                    for cn in old_table.keys():
+                        for i in find_all_strings(cn,p):
+                            i += 1          # Para mirar al siguiente símbolo
+                            stop = False
+
+                            while i <= len(p) and not stop:
+                                if i == len(p):
+                                    stop = True
+                                    new_table[cn].update(copy.deepcopy(old_table[nt]))
+                                else:
+                                    if p[i] in self.terminals:
+                                        stop = True
+                                        new_table[cn].add(p[i])
+                                    else:
+                                        n_firsts = copy.deepcopy(self.nt_firsts[p[i]])
+                                        if "" not in n_firsts and cn != p[i]:
+                                            stop = True
+                                        else:
+                                            n_firsts -= {''}
+                                        
+                                        new_table[cn].update(n_firsts)
+                                i += 1
+            # Vemos si son iguales las tablas
+            equals = True
+            
+            for nt in old_table.keys():
+                if old_table[nt] != new_table[nt]:
+                    equals = False
+                    break
+            
+            old_table = new_table
+
+
+        return old_table
 
     def compute_follow(self, symbol: str) -> AbstractSet[str]:
         """
@@ -182,8 +244,17 @@ class Grammar:
         Returns:
             Follow set of symbol.
         """
-
+        """
+        terminals: AbstractSet[str],
+        non_terminals: AbstractSet[str],
+        productions: Dict[str, List[str]],
+        axiom: str,
+        """
 	# TO-DO: Complete this method for exercise 4...
+        if symbol in self.non_terminals:
+            return self.nt_follow[symbol]
+        else:
+            raise ValueError("Symbol is not non-terminal in grammar")
 
 
     def get_ll1_table(self) -> Optional[LL1Table]:
@@ -195,6 +266,24 @@ class Grammar:
         """
 
 	# TO-DO: Complete this method for exercise 5...
+        ll1_table = LL1Table(self.non_terminals, set(self.terminals).union('$'))#: Dict[str, Dict[str,str]] = dict()
+        try:
+            for nt in self.non_terminals:
+                for p in self.productions[nt]:
+                    first_p = self.compute_first(p)
+
+                    for t in self.terminals:
+                        if t in first_p:
+                            ll1_table.add_cell(nt,t,p)
+
+                    if "" in first_p:
+                        for s in self.nt_follow[nt]:
+                            ll1_table.add_cell(nt,s,p)
+        except Exception as e:
+            print(repr(e))
+            return None
+
+        return ll1_table
 
 
     def is_ll1(self) -> bool:
@@ -235,6 +324,12 @@ class LL1Table:
             f"non_terminals={self.non_terminals!r}, "
             f"cells={self.cells!r})"
         )
+
+    def __eq__(self, __o: object) -> bool:
+        if not isinstance(__o,LL1Table):
+            return False
+        ll1_2: LL1Table = __o
+        return (ll1_2.cells == self.cells)
 
     def add_cell(self, non_terminal: str, terminal: str, cell_body: str) -> None:
         """
