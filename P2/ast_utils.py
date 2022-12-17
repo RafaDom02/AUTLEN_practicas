@@ -2,7 +2,6 @@ import ast
 from ast import *
 import copy
 from typing import Any
-import inspect
 
 class ASTNestedForCounter(NodeVisitor):
 

@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from collections import deque
 import copy
-from typing import AbstractSet, Collection, MutableSet, Optional, Dict, List, Optional
+from typing import AbstractSet, Collection, Optional, Dict, List, Optional
 
 class RepeatedCellError(Exception):
     """Exception for repeated cells in LL(1) tables."""
@@ -382,17 +381,21 @@ class LL1Table:
 
         # TO-DO: Complete this method for exercise 2...
         stack = list()
+        root = ParseTree(start)
+        node_stack:List[ParseTree] = list()
         stack.append("$")
         stack.append(start)
+        node_stack.append(root)
         index = 0
 
-        while len(stack) != 0:
-            print(stack)
-            
+        while len(stack) != 0:            
             if index == len(input_string):
                 raise SyntaxError()
             
+            #print(root, "--> root")
             elem = stack.pop()
+            if elem != '$':
+                node = node_stack.pop()
             
             if elem in self.non_terminals:
                 row = self.cells[elem]
@@ -401,8 +404,17 @@ class LL1Table:
                     # Si la regla es λ, no hay que añadir nada al stack
                     if n_sym != "":
                         texto = list(n_sym)
+
                         texto.reverse()
                         stack.extend(texto)
+
+                        nodes = list(map(lambda n:ParseTree(n),texto))
+                        node_stack.extend(nodes)
+                        
+                        nodes.reverse()
+                        node.add_children(nodes)
+                    else:
+                        node.add_children([ParseTree("λ")])
                 else:
                     raise SyntaxError()
                 
@@ -413,7 +425,7 @@ class LL1Table:
                     raise SyntaxError()
         
         if index == len(input_string):
-            return ParseTree("tumama",list())
+            return root
 
         raise SyntaxError()
     
@@ -445,3 +457,9 @@ class ParseTree():
 
     def add_children(self, children: Collection[ParseTree]) -> None:
         self.children = children
+
+    def pretty_print(self,identation="  "):
+        print(identation + self.root)
+
+        for n in self.children:
+            n.pretty_print(identation=identation + "  ")
