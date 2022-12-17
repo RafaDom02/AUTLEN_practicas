@@ -266,7 +266,7 @@ class Grammar:
         """
 
 	# TO-DO: Complete this method for exercise 5...
-        ll1_table = LL1Table(self.non_terminals, set(self.terminals).union('$'))#: Dict[str, Dict[str,str]] = dict()
+        ll1_table = LL1Table(self.non_terminals, set(self.terminals).union('$'))
         try:
             for nt in self.non_terminals:
                 for p in self.productions[nt]:

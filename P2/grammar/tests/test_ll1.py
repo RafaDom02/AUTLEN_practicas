@@ -91,6 +91,40 @@ class TestLL1(unittest.TestCase):
         """Test for syntax analysis from table."""
         
         grammar_str = """
+        A -> I=E
+        I -> iX
+        X -> l
+        X -> [E]
+        E -> CE
+        E -> i
+        E -> k
+        C -> i+E
+        C -> k+E
+        """
+
+        grammar = GrammarFormat.read(grammar_str)
+        self._check_table(grammar,None,True)
+
+    
+    def test_case5(self) -> None:
+        """Test for syntax analysis from table."""
+
+        terminals = {"=", "(", ")", "i", "k", 
+                     "f", "[", "]","$"}
+        non_terminals = {"S", "V", "R", "E"}
+        cells = [('S', 'i', 'V=E'),
+                 ('E', 'f', 'f(k)'),
+                 ('E', 'i', 'i'),
+                 ('E', 'k', 'k'),
+                 ('R', '=', ''),
+                 ('R', '[', '[E]'),
+                 ('V', 'i', 'iR'),
+                 ]
+        table = LL1Table(non_terminals, terminals)
+        for (nt, t, body) in cells:
+            table.add_cell(nt, t, body)
+        
+        grammar_str = """
         S -> V=E
         V -> iR
         R -> 
@@ -101,7 +135,7 @@ class TestLL1(unittest.TestCase):
         """
 
         grammar = GrammarFormat.read(grammar_str)
-        self._check_table(grammar,None,True)
+        self._check_table(grammar,table,False)
 
 if __name__ == '__main__':
     unittest.main()
