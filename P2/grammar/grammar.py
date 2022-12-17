@@ -3,15 +3,18 @@ from __future__ import annotations
 import copy
 from typing import AbstractSet, Collection, Optional, Dict, List, Optional
 
+
 class RepeatedCellError(Exception):
     """Exception for repeated cells in LL(1) tables."""
+
 
 class SyntaxError(Exception):
     """Exception for parsing errors."""
 
+
 def find_all_strings(substring, string):
-    """ 
-    Está pensado para iterar en un bucle 
+    """
+    Está pensado para iterar en un bucle
     mediante yield en vez de return
     """
 
@@ -19,6 +22,7 @@ def find_all_strings(substring, string):
     while i != -1:
         yield i
         i = string.find(substring, i+1)
+
 
 class Grammar:
     """
@@ -55,7 +59,7 @@ class Grammar:
             raise ValueError(
                 f"Set of non-terminals and productions keys should be equal."
             )
-        
+
         for nt, rhs in productions.items():
             if not rhs:
                 raise ValueError(
@@ -86,55 +90,63 @@ class Grammar:
             f"axiom={self.axiom!r}, "
             f"productions={self.productions!r})"
         )
-    
+
+    def _for_all_productions(self, func: function, new_table: dict, old_table: dict = None):
+        for nt in self.non_terminals:
+            for p in self.productions[nt]:
+                func(nt,p,new_table,old_table)
+
+    def _production_firsts(self, nt: str, p: str,new_table: dict, old_table: dict):
+        stop = False
+        i = 0
+
+        if p == '':
+            new_table[nt].add('')
+
+        while i < len(p) and not stop:
+            if p[i] in self.terminals:
+                stop = True
+                new_table[nt].add(p[i])
+            elif p[i] in self.non_terminals:
+                next_first = copy.deepcopy(old_table[p[i]])
+
+                if "" not in next_first or i+1 == len(p):
+                    stop = True
+                else:
+                    next_first -= {''}
+
+                new_table[nt].update(next_first)
+
+            i += 1
+
+    def _tables_equal(self, old_table:dict,new_table:dict):
+        for nt in old_table.keys():
+            if old_table[nt] != new_table[nt]:
+                return False
+        
+        return True
+
     def _compute_firsts(self) -> Dict[str, set[str]]:
-        old_table: Dict[str,set[str]]= dict()
+        old_table: Dict[str, set[str]] = dict()
         equals = False
         # Creamos las entradas de la tabla
         for nt in self.non_terminals:
             old_table[nt] = set()
-        
+
         # Iteramos sobre la tabla
         while not equals:
             new_table = copy.deepcopy(old_table)
-            for nt in old_table.keys():
-                for p in self.productions[nt]:
-                    stop = False
-                    i = 0
-
-                    if p == '':
-                        new_table[nt].add('')
-                    
-                    while i < len(p) and not stop:
-                        if p[i] in self.terminals:
-                            stop = True
-                            new_table[nt].add(p[i])
-                        elif p[i] in self.non_terminals:
-                            next_first = copy.deepcopy(old_table[p[i]])
-                            
-                            if "" not in next_first or i+1 == len(p):
-                                stop = True
-                            else:
-                                next_first -= {''}
-                            
-                            new_table[nt].update(next_first)
-
-                        i += 1
             
+            self._for_all_productions(
+                self._production_firsts, new_table, old_table
+            )
+
             # Vemos si son iguales las tablas
-            equals = True
-            #print(new_table)
-            #print(old_table)
-            
-            for nt in old_table.keys():
-                if old_table[nt] != new_table[nt]:
-                    equals = False
-                    break
-            
+            equals = self._tables_equal(old_table,new_table)
+
             old_table = new_table
 
-        return new_table            
-
+        return new_table
 
     def compute_first(self, sentence: str) -> AbstractSet[str]:
         """
@@ -146,14 +158,14 @@ class Grammar:
         Returns:
             First set of str.
         """
-        
+
         if sentence == "":
             return {''}
 
         # "Y+i"
         symbols = list(sentence)
         # ['Y','+','i']
-                
+
         i = 0
         stop = False
         firsts = set()
@@ -170,20 +182,44 @@ class Grammar:
                     stop = True
                 else:
                     next_first -= {''}
-                
-                
+
                 firsts.update(next_first)
                 #print(firsts, sym, next_first)
             else:
                 raise ValueError("Symbol not in grammar")
-            
+
             i += 1
 
         return firsts
 
-        
+    def _production_follows(self, nt: str, p: str, new_table: dict, old_table: dict):
+        for cn in old_table.keys():
+            for i in find_all_strings(cn, p):
+                i += 1          # Para mirar al siguiente símbolo
+                stop = False
+
+                while i <= len(p) and not stop:
+                    if i == len(p):
+                        stop = True
+                        new_table[cn].update(
+                            copy.deepcopy(old_table[nt]))
+                    else:
+                        if p[i] in self.terminals:
+                            stop = True
+                            new_table[cn].add(p[i])
+                        else:
+                            n_firsts = copy.deepcopy(
+                                self.nt_firsts[p[i]])
+                            if "" not in n_firsts and cn != p[i]:
+                                stop = True
+                            else:
+                                n_firsts -= {''}
+
+                            new_table[cn].update(n_firsts)
+                    i += 1
+
     def _compute_follows(self):
-        old_table: Dict[str,set[str]]= dict()
+        old_table: Dict[str, set[str]] = dict()
         equals = False
 
         # Creamos las entradas de la tabla
@@ -192,44 +228,18 @@ class Grammar:
                 old_table[nt] = {'$'}
             else:
                 old_table[nt] = set()
-        
+
         while not equals:
             new_table = copy.deepcopy(old_table)
 
-            for nt in old_table.keys():
-                for p in self.productions[nt]:
-                    for cn in old_table.keys():
-                        for i in find_all_strings(cn,p):
-                            i += 1          # Para mirar al siguiente símbolo
-                            stop = False
-
-                            while i <= len(p) and not stop:
-                                if i == len(p):
-                                    stop = True
-                                    new_table[cn].update(copy.deepcopy(old_table[nt]))
-                                else:
-                                    if p[i] in self.terminals:
-                                        stop = True
-                                        new_table[cn].add(p[i])
-                                    else:
-                                        n_firsts = copy.deepcopy(self.nt_firsts[p[i]])
-                                        if "" not in n_firsts and cn != p[i]:
-                                            stop = True
-                                        else:
-                                            n_firsts -= {''}
-                                        
-                                        new_table[cn].update(n_firsts)
-                                i += 1
+            self._for_all_productions(
+                self._production_follows, new_table, old_table
+            )
+                    
             # Vemos si son iguales las tablas
-            equals = True
-            
-            for nt in old_table.keys():
-                if old_table[nt] != new_table[nt]:
-                    equals = False
-                    break
-            
-            old_table = new_table
+            equals = self._tables_equal(old_table,new_table)
 
+            old_table = new_table
 
         return old_table
 
@@ -249,12 +259,22 @@ class Grammar:
         productions: Dict[str, List[str]],
         axiom: str,
         """
-	# TO-DO: Complete this method for exercise 4...
+        # TO-DO: Complete this method for exercise 4...
         if symbol in self.non_terminals:
             return self.nt_follow[symbol]
         else:
             raise ValueError("Symbol is not non-terminal in grammar")
 
+    def _production_ll1_table(self, nt: str, p: str, new_table: LL1Table, old_table = None):
+        first_p = self.compute_first(p)
+
+        for t in self.terminals:
+            if t in first_p:
+                new_table.add_cell(nt, t, p)
+
+        if "" in first_p:
+            for s in self.nt_follow[nt]:
+                new_table.add_cell(nt, s, p)
 
     def get_ll1_table(self) -> Optional[LL1Table]:
         """
@@ -264,26 +284,19 @@ class Grammar:
             LL(1) table for the grammar, or None if the grammar is not LL(1).
         """
 
-	# TO-DO: Complete this method for exercise 5...
-        ll1_table = LL1Table(self.non_terminals, set(self.terminals).union('$'))
+        # TO-DO: Complete this method for exercise 5...
+        ll1_table = LL1Table(self.non_terminals,
+                             set(self.terminals).union('$'))
         try:
-            for nt in self.non_terminals:
-                for p in self.productions[nt]:
-                    first_p = self.compute_first(p)
-
-                    for t in self.terminals:
-                        if t in first_p:
-                            ll1_table.add_cell(nt,t,p)
-
-                    if "" in first_p:
-                        for s in self.nt_follow[nt]:
-                            ll1_table.add_cell(nt,s,p)
+            self._for_all_productions(
+                self._production_ll1_table,
+                ll1_table
+            )        
         except Exception as e:
             print(repr(e))
             return None
 
         return ll1_table
-
 
     def is_ll1(self) -> bool:
         return self.get_ll1_table() is not None
@@ -314,7 +327,8 @@ class LL1Table:
 
         self.terminals: AbstractSet[str] = terminals
         self.non_terminals: AbstractSet[str] = non_terminals
-        self.cells: Dict[str, Dict[str, Optional[str]]] = {nt: {t: None for t in terminals} for nt in non_terminals}
+        self.cells: Dict[str, Dict[str, Optional[str]]] = {
+            nt: {t: None for t in terminals} for nt in non_terminals}
 
     def __repr__(self) -> str:
         return (
@@ -325,7 +339,7 @@ class LL1Table:
         )
 
     def __eq__(self, __o: object) -> bool:
-        if not isinstance(__o,LL1Table):
+        if not isinstance(__o, LL1Table):
             return False
         ll1_2: LL1Table = __o
         return (ll1_2.cells == self.cells)
@@ -356,7 +370,7 @@ class LL1Table:
             raise ValueError(
                 "Trying to add cell whose body contains elements that are "
                 "not either terminals nor non terminals.",
-            )            
+            )
         if self.cells[non_terminal][terminal] is not None:
             raise RepeatedCellError(
                 f"Repeated cell ({non_terminal}, {terminal}).")
@@ -382,21 +396,21 @@ class LL1Table:
         # TO-DO: Complete this method for exercise 2...
         stack = list()
         root = ParseTree(start)
-        node_stack:List[ParseTree] = list()
+        node_stack: List[ParseTree] = list()
         stack.append("$")
         stack.append(start)
         node_stack.append(root)
         index = 0
 
-        while len(stack) != 0:            
+        while len(stack) != 0:
             if index == len(input_string):
                 raise SyntaxError()
-            
+
             #print(root, "--> root")
             elem = stack.pop()
             if elem != '$':
                 node = node_stack.pop()
-            
+
             if elem in self.non_terminals:
                 row = self.cells[elem]
                 n_sym = row.get(input_string[index])
@@ -408,27 +422,28 @@ class LL1Table:
                         texto.reverse()
                         stack.extend(texto)
 
-                        nodes = list(map(lambda n:ParseTree(n),texto))
+                        nodes = list(map(lambda n: ParseTree(n), texto))
                         node_stack.extend(nodes)
-                        
+
                         nodes.reverse()
                         node.add_children(nodes)
                     else:
                         node.add_children([ParseTree("λ")])
                 else:
                     raise SyntaxError()
-                
+
             elif elem in self.terminals:
                 if elem == input_string[index]:
                     index += 1
                 else:
                     raise SyntaxError()
-        
+
         if index == len(input_string):
             return root
 
         raise SyntaxError()
-    
+
+
 class ParseTree():
     """
     Parse Tree.
@@ -437,6 +452,7 @@ class ParseTree():
         root: root node of the tree.
         children: list of children, which are also ParseTree objects.
     """
+
     def __init__(self, root: str, children: Collection[ParseTree] = []) -> None:
         self.root = root
         self.children = children
@@ -458,7 +474,7 @@ class ParseTree():
     def add_children(self, children: Collection[ParseTree]) -> None:
         self.children = children
 
-    def pretty_print(self,identation="  "):
+    def pretty_print(self, identation="  "):
         print(identation + self.root)
 
         for n in self.children:
