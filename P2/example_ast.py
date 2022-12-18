@@ -42,14 +42,18 @@ def fun4(p):
         print(i, x)
 
 if __name__ == "__main__":
+    line = "*"*40 + "\n"
     counter = ASTNestedForCounter()
     dot = ASTDotVisitor()
 
+    print(line)
+    print("Test de ASTDotVisitor\n")
     source = inspect.getsource(print_if_pos)
     my_ast = ast.parse(source)
     dot.visit(my_ast)
-    print("Test de ASTDotVisitor --> mirar graphic.dot")
+    print(line)
 
+    print("Test de ASTNestedForCounter\n")
     source = inspect.getsource(test_ast)
     my_ast = ast.parse(source)
     print("For's anidados de test1: ", counter.visit(my_ast))
@@ -57,18 +61,21 @@ if __name__ == "__main__":
     source = inspect.getsource(test_ast2)
     my_ast = ast.parse(source)
     print("For's anidados de test2: ", counter.visit(my_ast))
+    print(line)
 
-    print("Test de ASTReplaceVar")
+    print("Test de ASTReplaceVar\n")
     source = inspect.getsource(fun3)
     my_ast = ast.parse(source)
     print(source)
     repl = ASTReplaceVar("num", ast.Constant(0))
     repl.visit(my_ast)
     print(ast.unparse(my_ast))
+    print(line)
 
-    print("\nTest de ASTUnroll")
+    print("Test de ASTUnroll\n")
     unroll = ASTUnroll()
     source = inspect.getsource(fun4)
     my_ast = ast.parse(source)
     unroll.visit(my_ast)
     print(ast.unparse(my_ast))
+    print(line)

@@ -79,6 +79,8 @@ class Grammar:
         self.non_terminals = non_terminals
         self.productions = productions
         self.axiom = axiom
+
+        # Precálculo de los primeros y siguientes de los no terminales
         self.nt_firsts = self._compute_firsts()
         self.nt_follow = self._compute_follows()
 
@@ -92,6 +94,9 @@ class Grammar:
         )
 
     def _for_all_productions(self, func: function, new_table: dict, old_table: dict = None):
+        """
+        Método general para iterar sobre las producciones de la gramática
+        """
         for nt in self.non_terminals:
             for p in self.productions[nt]:
                 func(nt,p,new_table,old_table)
@@ -99,22 +104,27 @@ class Grammar:
     def _production_firsts(self, nt: str, p: str,new_table: dict, old_table: dict):
         stop = False
         i = 0
-
+        
+        # Caso λ
         if p == '':
             new_table[nt].add('')
-
+        
         while i < len(p) and not stop:
+
             if p[i] in self.terminals:
+                # Primero(t) = {t}
                 stop = True
                 new_table[nt].add(p[i])
             elif p[i] in self.non_terminals:
                 next_first = copy.deepcopy(old_table[p[i]])
 
+                # Si no hay λ o se trata del último símbolo paramos
                 if "" not in next_first or i+1 == len(p):
                     stop = True
                 else:
                     next_first -= {''}
 
+                # Añadimos los primeros del no terminal
                 new_table[nt].update(next_first)
 
             i += 1
@@ -159,32 +169,35 @@ class Grammar:
             First set of str.
         """
 
+        # Caso de λ
         if sentence == "":
             return {''}
 
-        # "Y+i"
+        # Preparamos la sentencia y al conjunto
         symbols = list(sentence)
-        # ['Y','+','i']
-
         i = 0
         stop = False
         firsts = set()
 
+        # Recorremos hasta satisfacer la condición de parada
         while i < len(symbols) and not stop:
             sym = symbols[i]
+
             if sym in self.terminals:
+                # Primero(t) = {t}
                 stop = True
                 firsts.add(sym)
             elif sym in self.non_terminals:
                 next_first = copy.deepcopy(self.nt_firsts[sym])
 
+                # Si no hay λ o se trata del último símbolo paramos
                 if '' not in next_first or i+1 == len(symbols):
                     stop = True
                 else:
                     next_first -= {''}
 
+                # Añadimos a los primeros del no terminal
                 firsts.update(next_first)
-                #print(firsts, sym, next_first)
             else:
                 raise ValueError("Symbol not in grammar")
 
@@ -260,6 +273,8 @@ class Grammar:
         axiom: str,
         """
         # TO-DO: Complete this method for exercise 4...
+
+        # Nos apoyamos en la tabla preconstruida
         if symbol in self.non_terminals:
             return self.nt_follow[symbol]
         else:
@@ -268,10 +283,12 @@ class Grammar:
     def _production_ll1_table(self, nt: str, p: str, new_table: LL1Table, old_table = None):
         first_p = self.compute_first(p)
 
+        # Probamos a ver si los terminales están
         for t in self.terminals:
             if t in first_p:
                 new_table.add_cell(nt, t, p)
 
+        # Caso en el que λ pertenece a los primeros
         if "" in first_p:
             for s in self.nt_follow[nt]:
                 new_table.add_cell(nt, s, p)
@@ -406,7 +423,6 @@ class LL1Table:
             if index == len(input_string):
                 raise SyntaxError()
 
-            #print(root, "--> root")
             elem = stack.pop()
             if elem != '$':
                 node = node_stack.pop()
@@ -428,6 +444,7 @@ class LL1Table:
                         nodes.reverse()
                         node.add_children(nodes)
                     else:
+                        # Sin embargo, hay que registrala como un nodo hijo
                         node.add_children([ParseTree("λ")])
                 else:
                     raise SyntaxError()
